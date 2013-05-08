@@ -1,7 +1,65 @@
-= Network Security Class
+= Network Security Class Laboratory Session 1
 
-== Test 1
-Chapter 1
+== Implementing the decryption procedure
+Instead of copy/pasting the code, I slightly modified the original
+`feistel_encrypt` function so that it can work *both as an encryptor and as a
+decryptor* (thus renaming it `feistel_encdec`). +
+Since the only difference in encryption and decryption algorithms is the order
+in which subkeys are generated (one order being the reverse of the other), it
+seemed almost natural to try to implement a single procedure with the
+capability of accepting a flag that can reverse the order of the subkey
+generation.
 
-== Test 2
-Chapter 2
+To do this, we need to manipulate the `subkey_cyclic_rotation` function, since
+its original implementation is _"round-agnostic"_: that is, its output depends
+only on the current input but not on the round number. This is a correct
+formulation that strictly resembles the general block diagram of a Feistel
+cipher, but it doesn't allow us to get keys in reversed order if not by
+generating all the keys upfront and iterating over them backwards. Looking at this
+function with a more software-oriented eye, though, we can see that it can be
+modified so that its output can be "round-aware". +
+In fact, the output of this function is built by splitting the
+input array into two halves and by rotating them "outward" by 1 bit (1 bit
++ROL+ for 1st half, 1 bit +ROR+ for 2nd half). +
+If we compare the output of this function at round j with the original key k,
+we see that the subkey k_j is just the original key k, splitted in two halves
+and outward-rotated by j bits (assuming j starts from 1).
+This tells us that if we parametrize the amount of bits rotated by the 
+function, we can obtain a general subkey k_j with a single call. +
+The resulting function is called `half_outward_shift`; to use it in the
+new Feistel encryptor/decryptor procedure, we need to modify the code so that
+it passes the correct parameters to it.
+
+If we just want to retain the original behavior of the `feistel_encrypt` 
+function, we only need to eval at each round `subkey_generation` with the
+original key and round number as parameters.
+However, we also need to use the same cycle to perform ciphertext decryption. +
+This can be done by replacing the plain round number i passed to the subkey
+generation function with the expression abs(i - D), where D is a constant that
+evaluates to `0` if we want to encrypt the input, and to `nr_rounds` if we're
+going to decrypt the message.
+
+As a recap, we:
+
+* created a new subkey generation function `half_outward_shift` which can
+calculate subkey latexmath:[k_j] with a single call starting from original key and round
+number
+* renamed `feistel_encrypt` to `feistel_encdec` and modified it so that it can
+perform both encryption and decryption by setting a flag parameter
+* wrapped calls to `feistel_encdec` into two helper functions `feistel_encrypt`
+* and `feistel_decrypt`
+
+To prove that the resulting code is correct, it is sufficient to perform the
+decryption of the encrypted message a certain number of times over a certain
+number of random messages:
+
+[source,matlab]
+for i = 1:very_large_number
+  msg = dec2hex(randi([0,2^32-1],1,1))
+  assert(isequal(
+    msg,
+    feistel_decrypt(
+      feistel_encrypt(msg, key, 4, @linear_round_function, @half_outward_shift), 
+      key, 4, @linear_round_function, @half_outward_shift),
+    'u and u_hat are supposed to be equal'))
+end
