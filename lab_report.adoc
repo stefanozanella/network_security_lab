@@ -21,11 +21,12 @@ modified so that its output can be "round-aware". +
 In fact, the output of this function is built by splitting the
 input array into two halves and by rotating them "outward" by 1 bit (1 bit
 +ROL+ for 1st half, 1 bit +ROR+ for 2nd half). +
-If we compare the output of this function at round j with the original key k,
-we see that the subkey k_j is just the original key k, splitted in two halves
-and outward-rotated by j bits (assuming j starts from 1).
+If we compare the output of this function at round latexmath:[j] with the
+original key latexmath:[k],
+we see that the subkey latexmath:[k_j] is just the original key latexmath:[k], splitted in two halves
+and outward-rotated by latexmath:[j] bits (assuming latexmath:[j] starts from 1).
 This tells us that if we parametrize the amount of bits rotated by the 
-function, we can obtain a general subkey k_j with a single call. +
+function, we can obtain a general subkey latexmath:[k_j] with a single call. +
 The resulting function is called `half_outward_shift`; to use it in the
 new Feistel encryptor/decryptor procedure, we need to modify the code so that
 it passes the correct parameters to it.
@@ -34,8 +35,9 @@ If we just want to retain the original behavior of the `feistel_encrypt`
 function, we only need to eval at each round `subkey_generation` with the
 original key and round number as parameters.
 However, we also need to use the same cycle to perform ciphertext decryption. +
-This can be done by replacing the plain round number i passed to the subkey
-generation function with the expression abs(i - D), where D is a constant that
+This can be done by replacing the plain round number latexmath:[i] passed to the subkey
+generation function with the function latexmath:[abs(i - D)], where
+latexmath:[D] is a constant that
 evaluates to `0` if we want to encrypt the input, and to `nr_rounds` if we're
 going to decrypt the message.
 
@@ -51,7 +53,8 @@ perform both encryption and decryption by setting a flag parameter
 
 To prove that the resulting code is correct, it is sufficient to perform the
 decryption of the encrypted message a certain number of times over a certain
-number of random messages:
+number of random messages and see that the result of the composition of the
+functions equates to the original message:
 
 [source,matlab]
 for i = 1:very_large_number
