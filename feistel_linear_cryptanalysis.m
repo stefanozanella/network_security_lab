@@ -16,7 +16,7 @@ B = []
 for shift = 1:lu
   plaintext = bi2hex(circshift(hex2bi(pulse_input), [0, -(shift-1)]));
 
-  b_i = hex2bi(feistel_encrypt(plaintext, key, 4, @linear_round_function, @half_outward_shift));
+  b_i = hex2bi(feistel_encrypt(plaintext, key, 8, @linear_round_function, @half_outward_shift));
   B = [B; b_i];
 end
 disp (B);
@@ -28,7 +28,7 @@ A = []
 for shift = 1:lu
   key = bi2hex(circshift(hex2bi(pulse_key), [0, -(shift-1)]));
 
-  a_i = hex2bi(feistel_decrypt(plaintext, key, 4, @linear_round_function, @half_outward_shift));
+  a_i = hex2bi(feistel_decrypt(plaintext, key, 8, @linear_round_function, @half_outward_shift));
   A = [A; a_i];
 end
 disp(A);
