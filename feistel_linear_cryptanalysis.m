@@ -1,35 +1,36 @@
 % required by Octave - otherwise hex2bi and bi2hex don't work
 pkg load communications
 
+kpa_pairs = parse_kpa_pairs_from('KPALinear.hex');
 
-%filename = 'KPAlinear.hex';
-%kpa_pairs = textscan(fopen(filename), '%s  %s');
+[A, B] = impulse_response(32, 8, @feistel_encrypt, @linear_round_function, ...
+        @half_outward_shift);
 
+% Beware of transpositions
+x = hex2bi(ciphertext_at(kpa_pairs, 1))';
+u = hex2bi(plaintext_at(kpa_pairs, 1))';
 
-lu = 32;
-nr_rounds = 8;
-pulse_input = pulse_key = '00000001';
+% Solve the linear equation
+k = bi2hex(gflineq(A, mod(x - (B * u), 2), 2)');
 
-disp('Cycling the plaintext');
-key = '00000000';
+disp(sprintf('Found key: %s', k));
 
-B = []
-for shift = 1:lu
-  plaintext = bi2hex(circshift(hex2bi(pulse_input), [0, -(shift-1)]));
+disp('Veryfing correctness with other known pairs');
+j = 2;
+key_working = 1;
+while (key_working && j <= length(kpa_pairs{1}))
+  x_j = ciphertext_at(kpa_pairs, j);
+  u_j = plaintext_at(kpa_pairs, j);
 
-  b_i = hex2bi(feistel_encrypt(plaintext, key, nr_rounds, @linear_round_function, @half_outward_shift));
-  B = [B; b_i];
+  x_hat = feistel_encrypt(u_j, k, 8, @linear_round_function, ...
+                                            @half_outward_shift);
+  key_working = strcmp(x_j, x_hat);
+  j = j+1;
 end
-disp (B);
 
-disp('Cycling the key');
-plaintext = '00000000';
-
-A = []
-for shift = 1:lu
-  key = bi2hex(circshift(hex2bi(pulse_key), [0, -(shift-1)]));
-
-  a_i = hex2bi(feistel_decrypt(plaintext, key, nr_rounds, @linear_round_function, @half_outward_shift));
-  A = [A; a_i];
+if (key_working)
+  disp('Got it! Key worked with all eavesdropped pairs');
+else
+  disp(spritnf('Something went wrong: key did not work for pair u = %s, x = %s', ...
+  u_j, x_j));
 end
-disp(A);

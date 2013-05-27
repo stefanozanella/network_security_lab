@@ -5,7 +5,7 @@ Instead of copy/pasting the code, I slightly modified the original
 `feistel_encrypt` function so that it can work *both as an encryptor and as a
 decryptor* (thus renaming it `feistel_encdec`). +
 Since the only difference in encryption and decryption algorithms is the order
-in which subkeys are generated (one order being the reverse of the other), it
+in which subkeys are generated (one being the reverse of the other), it
 seemed almost natural to try to implement a single procedure with the
 capability of accepting a flag that can reverse the order of the subkey
 generation.
@@ -17,7 +17,7 @@ formulation that strictly resembles the general block diagram of a Feistel
 cipher, but it doesn't allow us to get keys in reversed order if not by
 generating all the keys upfront and iterating over them backwards. Looking at this
 function with a more software-oriented eye, though, we can see that it can be
-modified so that its output can be "round-aware". +
+modified so that its output can be _"round-aware"_. +
 In fact, the output of this function is built by splitting the
 input array into two halves and by rotating them "outward" by 1 bit (1 bit
 +ROL+ for 1st half, 1 bit +ROR+ for 2nd half). +
@@ -33,7 +33,7 @@ it passes the correct parameters to it.
 
 If we just want to retain the original behavior of the `feistel_encrypt` 
 function, we only need to eval at each round `subkey_generation` with the
-original key and round number as parameters.
+original key and round number as parameters. +
 However, we also need to use the same cycle to perform ciphertext decryption. +
 This can be done by replacing the plain round number latexmath:[i] passed to the subkey
 generation function with the function latexmath:[abs(i - D)], where
@@ -66,3 +66,98 @@ for i = 1:very_large_number
       key, 4, @linear_round_function, @half_outward_shift),
     'u and u_hat are supposed to be equal'))
 end
+
+== Linear cryptanalysis
+=== Mathematical model
+Since it's a given assumption that the cipher implemented using
+`@linear_round_function` is indeed linear, we can treat the encryptor as a
+linear system and analyze it with the binary version of a _pulse train_. In our
+case, given latexmath:[k \in \mathbb{B}^{32},\: u \in \mathbb{B}^{32},\: x \in
+\mathbb{B}^{32}] (respectively, the key, plaintext message and
+ciphertext), we can model the encryptor as:
+
+[latexmath]
+++++
+\[x = \mathbf{A}k + \mathbf{B}u \] 
+++++
+
+where latexmath:[\mathbf{A}] and latexmath:[\mathbf{B}] are two latexmath:[(32 \times 32)]
+square matrices such that latexmath:[\mathbf{A},\mathbf{B} \in \mathbb{B}^{32} \times \mathbb{B}^{32}].
+
+That said, under the assumption that latexmath:[\mathbf{A}] is non-singular we
+can find the solution of the linear system for a given known
+plaintext-ciphertext as:
+
+[latexmath]
+++++
+\[k = \mathbf{A}^{-1}(x - \mathbf{B}u)\]
+++++
+
+In this case, since the system is linear, we need to solve this system only for
+one given plaintext-ciphertext pair. Solving the system for all the other pairs
+must give the same key.
+
+=== System Analysis
+With this structure in mind, we now have to derive the two matrices from the
+practical implementation to fill in the model and actually obtain the
+information we're looking for. +
+Deriving the two matrices can be done in two symmetric steps that apply the
+following idea to both the plaintext and the key:
+
+. We set one of the two inputs of the encryptor block to the 4-words binary
+representation of `0` (i.e. **`00000000`**)
+. We let the other input to be the binary representation of the number `1`,
+also as a 4-word message (i.e. **`00000001`**)
+. We run the encryptor with these particular inputs. It can be easily seen
+that the output is the value of the 31st column of either the
+latexmath:[\mathbf{A}] or latexmath:[\mathbf{B}] matrix, depending on how we
+initialized the inputs
+. We iterate all of the above over the inputs updated as follows:
+  * The input set to `0` remains the same
+  * The pulse input is left-shifted by 1 bit.
+
+If we memorize the columns obtained as ciphertexts, after shifting the pulse
+array by its whole length we can obtain the full latexmath:[\mathbf{A}] or
+latexmath:[\mathbf{B}] matrix. Then, we can just perform the same procedure
+another time swapping the roles of the two ipnuts to obtain the other missing
+matrix.
+
+=== Implementation Caveats
+We developed our model under the assumption of matrix latexmath:[\mathbf{A}]
+being invertible. Unfortunately, it turns out that wht the given Feistel cipher
+implementation, the key multiplication matrix doesn't have full rank but
+instead has **2 linearly dependent** rows/columns. This prevents us to invert
+the latexmath:[\mathbf{A}] matrix. Still, we can get over this problem by using
+the `gflineq` function in Matlab, which finds a particular solution of the
+linear equation latexmath:[\mathbf{A}x = \mathbf{b}] over a Galois field of
+given (prime number) size.
+
+It is worth noting how this little complication in the resolution of the
+system enevtually proves the cipher to be even weaker than supposed: in fact,
+since latexmath:[rank(\mathbf{A}) = 30], 2 of the 32 bits the key is composed
+of are dependent of the others, so the key space an attacker has to search in is
+reduced by a factor 4. This doesn't give a direct advantage to the cryptanalyst
+in this case, since solving the linear equation is a more efficient way to
+break the system; however, it will be shown later how this helps in breaking
+the nearly-linear Feistel cipher.
+
+=== Attack Implementation
+The impulse response of the system is calculated in the `impulse_response`
+function. It outputs the two matrices latexmath:[\mathbf{A}] and
+latexmath:[\mathbf{B}]. This function is then called by the
+`feistel_linear_cryptanalysis` script, which calculates the key for the first
+known-text pair and then compares it with the other known pairs as a proof of
+correctness .
+
+The key resulting from running the cryptanalysis script with the KPA set #3 is:
+
+----
+  C3F8177E
+----
+
+== Nearly-linear cryptanalysis (4 rounds, 8 bits)
+== Nearly-linear cryptanalysis (2 rounds, 32 bits)
+
+
+=== Matlab vs Octave Issues and Workarounds
+http://read.pudn.com/downloads64/sourcecode/others/224341/ldpc_toolkit/gflineq.m__.htm

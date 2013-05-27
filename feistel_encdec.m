@@ -1,6 +1,6 @@
 function [ output_msg ] = feistel_encdec(input_msg, key, nr_rounds, ...
-                                          round_function,subkey_generation,
-                                          decrypt)
+                                  round_function,subkey_generation, ...
+                                  decrypt)
 
 % FEISTEL_ENCDEC: feistel block cipher encryption/decrpytion algorithm
 %   The function receives as input a input_msg, and (d)encrypts it with the
