@@ -1,4 +1,4 @@
-function [A, b] = find_valid_lineq_for_mitm(u,x)
+function [A, b, F] = find_valid_lineq_for_mitm(u,x)
 
 % FIND_VALID_LINEQ_FOR_MITM: Given a plaintext u and a corresponding ciphertext
 % x, try to reverse the 2 round Feistel cipher that produced them and find
@@ -47,7 +47,7 @@ h2 = xor(u_l, x_r);
 %   * if bit of u_l is 0 and bit of h1 is 1, then the xor must equate to 1
 %   * if they're both 1, we can't say anything about the value of the xor
 %   * if bit of u_l is 1 and bit of h1 is 0, then there must be something broken
-%     since boolean algebra don't allow this situation :-)
+%     since boolean algebra doesn't allow this situation :-)
 % All this considerations can be summed up nicely with the expression 
 %   ~ h1_j & u_l_j
 % if this is 1, then we know that the corresponding bit of odd(k1) ^ even(k1)
@@ -73,61 +73,71 @@ useful_positions_2 = not(h2 & x_l);
 
 A = [];
 b = [];
+F = [];
 
 for j = 0:(length(useful_positions_1)/2-1)
+  key_bit_1 = mod(2*j+1, 16)+1;
+  key_bit_2 = mod(2*j+2, 16)+1;
+
+  a_i = zeros(1, L);
+  a_i(key_bit_1) = 1;
+  a_i(key_bit_2) = 1;
+
+  b_i = xor(h1(j+1), u_l(j+1));
+
   if (useful_positions_1(j+1))
-    key_bit_1 = mod(2*j+1, 16)+1;
-    key_bit_2 = mod(2*j+2, 16)+1;
-
-    a_i = zeros(1, L);
-    a_i(key_bit_1) = 1;
-    a_i(key_bit_2) = 1;
-
     A = [ A; a_i ];
-
-    b_i = xor(h1(j+1), u_l(j+1));
     b = [ b; b_i ];
+  else
+    F = [ F; a_i ];
   end
+
+
+  key_bit_1 = mod(31 - mod(-2*j, 16), 32) + 1;
+  key_bit_2 = mod(31 - mod(-2*j - 1, 16), 32) + 1;
+
+  a_i = zeros(1, L);
+  a_i(key_bit_1) = 1;
+  a_i(key_bit_2) = 1;
+
+  b_i = xor(h1(j+9), u_l(j+9));
 
   if (useful_positions_1(j+9))
-    key_bit_1 = mod(31 - mod(-2*j, 16), 32) + 1;
-    key_bit_2 = mod(31 - mod(-2*j - 1, 16), 32) + 1;
-
-    a_i = zeros(1, L);
-    a_i(key_bit_1) = 1;
-    a_i(key_bit_2) = 1;
-
     A = [ A; a_i ];
-
-    b_i = xor(h1(j+9), u_l(j+9));
     b = [ b; b_i ];
+  else
+    F = [ F; a_i ];
   end
+
+  key_bit_1 = mod(2*j+2, 16)+1;
+  key_bit_2 = mod(2*j+3, 16)+1;
+
+  a_i = zeros(1, L);
+  a_i(key_bit_1) = 1;
+  a_i(key_bit_2) = 1;
+
+  b_i = xor(h2(j+1), x_l(j+1));
 
   if (useful_positions_2(j+1))
-    key_bit_1 = mod(2*j+2, 16)+1;
-    key_bit_2 = mod(2*j+3, 16)+1;
-
-    a_i = zeros(1, L);
-    a_i(key_bit_1) = 1;
-    a_i(key_bit_2) = 1;
-
     A = [ A; a_i ];
-
-    b_i = xor(h2(j+1), x_l(j+1));
     b = [ b; b_i ];
+  else
+    F = [ F; a_i ];
   end
 
+  key_bit_1 = mod(31 - mod(-2*j - 1, 16), 32) + 1;
+  key_bit_2 = mod(31 - mod(-2*j - 2, 16), 32) + 1;
+
+  a_i = zeros(1, L);
+  a_i(key_bit_1) = 1;
+  a_i(key_bit_2) = 1;
+
+  b_i = xor(h2(j+9), x_l(j+9));
+
   if (useful_positions_2(j+9))
-    key_bit_1 = mod(31 - mod(-2*j - 1, 16), 32) + 1;
-    key_bit_2 = mod(31 - mod(-2*j - 2, 16), 32) + 1;
-
-    a_i = zeros(1, L);
-    a_i(key_bit_1) = 1;
-    a_i(key_bit_2) = 1;
-
     A = [ A; a_i ];
-
-    b_i = xor(h2(j+9), x_l(j+9));
     b = [ b; b_i ];
+  else
+    F = [ F; a_i ];
   end
 end

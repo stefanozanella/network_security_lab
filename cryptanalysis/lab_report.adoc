@@ -147,7 +147,7 @@ function. It outputs the two matrices latexmath:[\mathbf{A}] and
 latexmath:[\mathbf{B}]. This function is then called by the
 `feistel_linear_cryptanalysis` script, which calculates the key for the first
 known-text pair and then compares it with the other known pairs as a proof of
-correctness .
+correctness.
 
 The key resulting from running the cryptanalysis script with the KPA set #3 is:
 
@@ -157,7 +157,93 @@ The key resulting from running the cryptanalysis script with the KPA set #3 is:
 
 == Nearly-linear cryptanalysis (4 rounds, 8 bits)
 == Nearly-linear cryptanalysis (2 rounds, 32 bits)
+Since only 2 rounds are performed here, we can use a _meet in the middle_
+technique. +
+That is, we can exploit the relation between plaintext and ciphertext and try
+to invert this relation in a fashion similar to what we've done with the linear
+cipher.
 
+Let's start by analyzing the structure of the particular Feistel cipher under
+the circumstances given by the assignment. +
 
+image::2_rounds_feistel.jpg[]
+
+By looking at the figure, we can setup the following equations (2 pairs for the
+encryptor, 2 pairs for the decryptor):
+
+[latexmath]
+++++
+\[v_L = F(u_L, k_1) \oplus u_R \qquad v_R = u_L \qquad x_R = F(v_L, k_2) \oplus v_R \qquad x_L = v_L\]
+\[w_L = F(x_L, k_2) \oplus x_R \qquad w_R = x_L \qquad u_R = F(w_L, k_1) \oplus w_R \qquad u_L = w_L\]
+++++
+
+Then, by expanding the first 4 equations we see that:
+
+[latexmath]
+++++
+\[ x_R = F(v_L, k_2) \oplus u_L \qquad x_L = F(u_L, k_1) \oplus u_R \]
+\[ x_R = F(x_L, k_2) \oplus u_L \qquad x_L = F(u_L, k_1) \oplus u_R \]
+++++
+
+Then, by XORing on both sides of the equations we obtain:
+
+[latexmath]
+++++
+\[x_L \oplus u_R = F(u_L, k_1)\]
+\[x_R \oplus u_L = F(x_L, k_2)\]
+++++
+
+The same result can be obtained by exploting the relationships in the last 2
+pairs of equations coming from the decryptor's model.
+
+We can see how the left term of both equations is well-known; if we had a way
+to calculate the inverse of the round function with respect to the two subkeys,
+then we could simply retrieve the key given one known text pair. This, however,
+can't be done in this case in a deterministic way since the round function is
+non-linear. Nonetheless, we can make the relation between the round function's
+arguments explicit and see that we can still gather few bits of information
+given a known text pair. We begin by writing down the bitwise expression for F.
+Given:
+
+[latexmath]
+++++
+\[w = F(k, y)\]
+++++
+
+and
+
+[latexmath]
+++++
+\[w = w_{15} \; w_{14} \; ... \; w_1 \; w_0\]
+\[y = y_{15} \; y_{14} \; ... \; y_1 \; y_0\]
+\[k = k_{31} \; k_{30} \; ... \; k_1 \; k_0\]
+++++
+
+then
+
+[latexmath]
+++++
+\[w_{2j} = y_{2j} \vee (k_{2j} \oplus k_{2j+1})\]
+++++
+
+(that is, each output bit is the OR between the input bit at same position and
+the XOR of a pair of adjacent bits of the key).
+
+That said, we can look at the truth table of the OR function and infer the
+following:
+
+[latexmath]
+++++
+\[\forall j : y_{2j} = 0 \Rightarrow k_{2j} \oplus k_{2j+1} = w_{2j}\]
+++++
+
+so, we have a way to infer valid linear equations between bits of the key (note
+that we have to account for different subkeys being used in different rounds;
+this is easy to handle since we know how the bits positions change between
+subkeys). 
+We can then collect each valid equation and put it in a system; in the ideal (from
+the attacker standpoint) case, we then obtain a full rank system of linear
+equations that can be easily solved to recover all key bits. +
+However, in our case 
 === Matlab vs Octave Issues and Workarounds
 http://read.pudn.com/downloads64/sourcecode/others/224341/ldpc_toolkit/gflineq.m__.htm
