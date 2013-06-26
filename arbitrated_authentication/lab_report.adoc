@@ -1,0 +1,35 @@
+= Network Security Class Lab Session 3
+
+== Implementation Details
+Here are the choices made where requested by the assignment or when no further
+specification given:
+
+* The assignment has been implemented in **Ruby** (version **2.0.0-p195**)
+* To simplify the resulting codebase hosts have been modeled as classes, and
+  communications over the network channel have been modeled with a `Channel`
+  class that acts like a simple shared message storage. This allows to easily
+  simulate message exchanging and eavesdropping.
+* For the same reason, and to make the source code more readable, data
+  concatenation has been modeled with hash maps. This in fact replaces
+  specifying data chuncks' lengths in the protocol with specifying the keys at
+  which data chuncks are accessible.
+* Cryptographic primitives (ciphers, RNGs, etc.) are provided by Ruby's wrapper
+  around the **OpenSSL** library and core language facilites. In detail:
+
+  * RNG is provided by the built-in `Random` class
+    (http://ruby-doc.org/core-2.0/Random.html[documentation]), a PRNG based
+    on a _Mersenne twister_.
+  * asymmetric public key algorithm is RSA (Ruby
+    http://www.ruby-doc.org/stdlib-2.0/libdoc/openssl/rdoc/OpenSSL/PKey/RSA.html[documentation]),
+    with **2048 bits** key length.
+  * message authentication/integrity protection is provided by class `OpenSSL::HMAC`, which accepts
+    an available digest algorithm as a parameter. Selected cryptographic hash
+    function for message authentication is **SHA512**, provided by class
+    `OpenSSL::Digest::SHA512`
+    (http://www.ruby-doc.org/stdlib-2.0/libdoc/openssl/rdoc/OpenSSL/Digest.html[documentation]).
+
+* Since OpenSSL RSA works on strings, all hashes used for communication needed
+  to be serialized before encryption. Ruby's built-in standard for
+  serialization/deserialization is **YAML**
+  (http://www.ruby-doc.org/stdlib-2.0/libdoc/yaml/rdoc/YAML.html[documentation]),
+  which use is made transparent by encapsulation into class `NetSec::Node`.

@@ -1,4 +1,4 @@
-function [ A, b, freedom ] = feistel_mitm_cryptanalysis(kpa_pairs)
+function [ A_redux, b_redux, freedom ] = feistel_mitm_cryptanalysis(kpa_pairs)
   A = b = F = [];
   for j=1:length(kpa_pairs{1})
     [ Aj, bj, Fj ] = find_valid_lineq_for_mitm(...
@@ -22,7 +22,7 @@ function [ A, b, freedom ] = feistel_mitm_cryptanalysis(kpa_pairs)
   % Find collisions in A, so to keep only rows of F that truly has no certain
   % answer. Also, avoid inserting duplicated rows in `freedom`.
   freedom = [];
-  collisions = ismember(F, A, 'rows');
+  collisions = ismember(F, A_redux, 'rows');
   for m=1:length(F)
     if (~(collisions(m) | ismember(F(m,:), freedom, 'rows')))
       freedom = [ freedom; F(m,:) ];

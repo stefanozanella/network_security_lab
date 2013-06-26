@@ -1,4 +1,4 @@
-= Network Security Class Laboratory Session 1
+= Network Security Class Lab Session 1
 
 == Implementing the decryption procedure
 Instead of copy/pasting the code, I slightly modified the original
@@ -244,6 +244,18 @@ subkeys).
 We can then collect each valid equation and put it in a system; in the ideal (from
 the attacker standpoint) case, we then obtain a full rank system of linear
 equations that can be easily solved to recover all key bits. +
-However, in our case 
+However, since there's no guarantee of obtaining a good amount of linearly
+independent equations, we need to account for a certain amount of freedom when
+solving the system.
+
+In fact, in the given case, applying this technique holds a matrix of rank
+**29** instead of the expected **30**. A step further can then be done by also
+collecting those expressions that didn't allow us to infer valid equations for
+the system; then, they can be appended to the matrix by manually setting the
+corresponding known value each time at a different value. This way we can
+perform a brute force attack just on the part of the problem we can't gather
+information about. This allows to reduce the search space from
+latexmath:[2^{32}] to latexmath:[2^2] bits.
+
 === Matlab vs Octave Issues and Workarounds
 http://read.pudn.com/downloads64/sourcecode/others/224341/ldpc_toolkit/gflineq.m__.htm
