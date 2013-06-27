@@ -14,17 +14,13 @@ module NetSec
 
     def step_5
       u1 = private_decrypt(msg)
-      @key = u1[:k]
+      self.shared_key = u1[:k]
     end
 
     def step_6
-      t2_hat = signature_tag_for(@msg_from_a, @key)
+      t2_hat = signature_tag_for(@msg_from_a, shared_key)
 
       raise SecurityError, "Invalid message signature" unless @t2 == t2_hat
-    end
-
-    def key!
-      @key.unpack("H*")
     end
   end
 end

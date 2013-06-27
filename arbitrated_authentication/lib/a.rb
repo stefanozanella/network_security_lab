@@ -21,19 +21,19 @@ module NetSec
 
     def step_2
       u1 = private_decrypt(msg)
-      @key = u1[:k]
+      self.shared_key = u1[:k]
     end
 
     def step_3
       x2 = { id_a: id, id_b: @destination, r_a: @r_a}
-      t2 = signature_tag_for(x2, @key)
+      t2 = signature_tag_for(x2, shared_key)
       x2[:t2] = t2
 
       transmit(x2, @destination)
     end
 
-    def key!
-      @key.unpack("H*")
+    def secure_send(msg)
+      secure_transmit(msg, @destination)
     end
   end
 end

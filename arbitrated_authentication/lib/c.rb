@@ -1,10 +1,8 @@
 require 'node'
-require 'yaml'
 
 module NetSec
   class C < Node
-    # Why 8 bytes ???
-    KEY_SIZE = 8
+    KEY_SIZE = 32 # For AES-256
 
     def initialize(id, channel)
       super(id, channel)

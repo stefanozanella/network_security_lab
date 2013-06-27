@@ -22,6 +22,8 @@ specification given:
   * asymmetric public key algorithm is RSA (Ruby
     http://www.ruby-doc.org/stdlib-2.0/libdoc/openssl/rdoc/OpenSSL/PKey/RSA.html[documentation]),
     with **2048 bits** key length.
+  * symmetric key cipher is **AES 256**, used when simulating communications
+    between nodes.
   * message authentication/integrity protection is provided by class `OpenSSL::HMAC`, which accepts
     an available digest algorithm as a parameter. Selected cryptographic hash
     function for message authentication is **SHA512**, provided by class
@@ -47,5 +49,50 @@ bin/key_exchange
 The output should be something similar to:
 
 [source,bash]
-A has key: ["ec3c14b45353c9e4"]
-B has key: ["ec3c14b45353c9e4"]
+A has key: ["a2b85f3a7164c411d8ea5eb66affa741472eb59be787c3b3ea63b7816c868d39"]
+B has key: ["a2b85f3a7164c411d8ea5eb66affa741472eb59be787c3b3ea63b7816c868d39"]
+
+== Possible Flaws and Related Attacks
+=== C Node Spoofing
+While **C** makes use of asymmetric cryptography to exchange the key with
+**A** and **B**, these last two does not the same when communicating with
+**C**. This easily allows an attacker to spoof **C**'s identity (for example,
+by DoSing it and routing requests to itself); once the attacker can
+successfully impersonate **C** it has just to save the list of generated keys
+and start eavesdropping from the communication channel. This way it can do
+whatever it wants (from simply logging exchanged information to manipulation of
+exchanged data), given no other security mechanisms are in place for a given
+session (e.g. for message integrity).
+
+== Attacks Implementation and Analysis
+=== C Node Spoofing
+To simulate spoofing of node C, a `NetSec::SpoofedC` subclass has been
+introduced. Basically it acts the same way as its parent class, plus it
+eavesdrop on the channel upon initialization and then saves the generated key
+to decrypt eavesdropped messages.
+
+Spoofing simulation can be run from the prompt by invoking:
+
+[source,bash]
+bin/spoofing_attack
+
+which outputs something along the lines of:
+
+[source,bash]
+A has key: ["c26c3f32631b6eb395d90a63f835baccbdbc244cd400a15312bbfea15bffa93b"]
+B has key: ["c26c3f32631b6eb395d90a63f835baccbdbc244cd400a15312bbfea15bffa93b"]
+Spoofed C has key: ["c26c3f32631b6eb395d90a63f835baccbdbc244cd400a15312bbfea15bffa93b"]
+B received: My credit card number is 1234567890123456
+The attacker eavesdropped: My credit card number is 1234567890123456
+
+== Possible Improvements
+=== C Node Spoofing
+A simple solution to the problem of spoofing **C** identity would be to make
+use of **C** asymmetric keys during key agreement. +
+In particular, in steps **1** and **4**, **A** and **B** could encrypt the
+message latexmath:[[id_A, id_B, r_A]] using **C**'s public key
+latexmath:[k_C']. On the other side, **C** would then decrypt received messages
+using its private key latexmath:[k_C]. With this simple improvement, the only
+way for an attacker to perform the same spoofing attack would be to steal
+**C**'s private key, which is supposed to be an event with low probability of
+success given the assumptions of asymmetric cryptography.

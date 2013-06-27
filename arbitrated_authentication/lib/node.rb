@@ -1,3 +1,4 @@
+require 'openssl'
 require 'yaml'
 
 module NetSec
@@ -17,16 +18,51 @@ module NetSec
       @msg
     end
 
-    def public_key
-      @priv_key.public_key
-    end
-
     def receive(msg)
       @msg = YAML.load msg
     end
 
-    def transmit(msg, dest)
-      @channel.tx(msg.to_yaml, dest)
+    def public_key
+      @priv_key.public_key
+    end
+
+    def key!
+      @key.unpack("H*")
+    end
+
+    def secure_transmit(data, dest)
+      cipher = OpenSSL::Cipher::AES256.new(:CBC)
+      cipher.encrypt
+      cipher.key = shared_key
+      iv = cipher.random_iv
+      crypted_data = cipher.update(data.to_yaml) + cipher.final
+
+      transmit({ iv: iv, data: crypted_data }, dest, true)
+    end
+
+    def secure_receive(data)
+      receive(data)
+      cipher = OpenSSL::Cipher::AES256.new(:CBC)
+      cipher.decrypt
+      cipher.key = shared_key
+      cipher.iv = msg[:iv]
+      decrypted_data = cipher.update(msg[:data]) + cipher.final
+
+      receive(decrypted_data)
+    end
+
+    private
+
+    def shared_key
+      @key
+    end
+
+    def shared_key=(key)
+      @key = key
+    end
+
+    def transmit(msg, dest, secure = false)
+      @channel.tx(msg.to_yaml, dest, secure)
     end
 
     def public_encrypt(key, msg)
