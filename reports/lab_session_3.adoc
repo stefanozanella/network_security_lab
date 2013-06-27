@@ -96,3 +96,20 @@ using its private key latexmath:[k_C]. With this simple improvement, the only
 way for an attacker to perform the same spoofing attack would be to steal
 **C**'s private key, which is supposed to be an event with low probability of
 success given the assumptions on which  asymmetric cryptography is based.
+
+This solution is implemented in classes `AntispoofingA`, `AntispoofingB` and
+`AntispoofingC`. The correctness of the implementation can be seen by launching
+from the prompt:
+
+[source,bash]
+bin/antispoofing_agreement
+
+To simulate the attack against this improved version, class
+`SpoofedAntispoofingC` has been created. By launching
+
+[source,bash]
+bin/antispoofing_attack
+
+it can be seen how the whole process generates an error when the malicious
+**C** tries to decrypt the message from **A**'s step 1 without having the
+correct private key.

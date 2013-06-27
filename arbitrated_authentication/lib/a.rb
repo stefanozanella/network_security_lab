@@ -6,11 +6,12 @@ module NetSec
     # TODO Why 8 bytes???
     NONCE_SIZE = 8.freeze
     
-    def initialize(id, dest_id, keygen_id, channel)
+    def initialize(id, dest_id, keygen_id, keygen_pubkey, channel)
       super(id, channel)
 
       @destination = dest_id
       @keygen = keygen_id
+      @keygen_pubkey = keygen_pubkey
     end
 
     def step_1

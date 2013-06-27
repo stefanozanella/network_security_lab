@@ -53,6 +53,10 @@ module NetSec
 
     private
 
+    def private_key
+      @priv_key
+    end
+
     def shared_key
       @key
     end
@@ -70,7 +74,7 @@ module NetSec
     end
 
     def private_decrypt(msg)
-      YAML.load @priv_key.private_decrypt msg
+      YAML.load private_key.private_decrypt msg
     end
 
     def signature_tag_for(data, key)

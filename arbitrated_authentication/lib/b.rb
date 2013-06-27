@@ -1,9 +1,10 @@
 require 'node'
 module NetSec
   class B < Node
-    def initialize(id, keygen_id, channel)
+    def initialize(id, keygen_id, keygen_pubkey, channel)
       super(id, channel)
       @keygen = keygen_id
+      @keygen_pubkey = keygen_pubkey
     end
 
     def step_4

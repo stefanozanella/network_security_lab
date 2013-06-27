@@ -3,6 +3,10 @@ require 'a'
 require 'b'
 require 'c'
 require 'spoofed_c'
+require 'antispoofing_a'
+require 'antispoofing_b'
+require 'antispoofing_c'
+require 'spoofed_antispoofing_c'
 
 module NetSec
   class KeyAgreement
@@ -31,11 +35,36 @@ module NetSec
       puts "The attacker eavesdropped: #{@c.msg}"
     end
 
+    # Antispoofing improvement of original protocol
+    def antispoofing_start!
+      setup_nodes(AntispoofingA, AntispoofingB, AntispoofingC)
+
+      key_agreement
+
+      puts "A has key: #{@a.key!}"
+      puts "B has key: #{@b.key!}"
+    end
+
+    # Simulation of spoofing C identity with antispoofing protection in place
+    def antispoofing_attack!
+      setup_nodes(AntispoofingA, AntispoofingB, SpoofedAntispoofingC)
+
+      key_agreement
+
+      puts "A has key: #{@a.key!}"
+      puts "B has key: #{@b.key!}"
+      puts "Spoofed C has key: #{@c.key!}"
+
+      @a.secure_send "My credit card number is 1234567890123456"
+      puts "B received: #{@b.msg}"
+      puts "The attacker eavesdropped: #{@c.msg}"
+    end
+
     def setup_nodes(klass_a, klass_b, klass_c)
       @channel = Channel.new
       @c = klass_c.new("exchanger.example.com", @channel)
-      @a = klass_a.new("alice.example.com", "bob.example.com", @c.id, @channel)
-      @b = klass_b.new("bob.example.com", @c.id, @channel)
+      @a = klass_a.new("alice.example.com", "bob.example.com", @c.id, @c.public_key, @channel)
+      @b = klass_b.new("bob.example.com", @c.id, @c.public_key, @channel)
 
       @channel.register @a
       @channel.register @b
