@@ -34,8 +34,8 @@ module NetSec
 
       b.step_6
 
-      puts a.key!
-      puts b.key!
+      puts "A has key: #{a.key!}"
+      puts "B has key: #{b.key!}"
     end
   end
 end

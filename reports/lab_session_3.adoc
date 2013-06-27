@@ -33,3 +33,19 @@ specification given:
   serialization/deserialization is **YAML**
   (http://www.ruby-doc.org/stdlib-2.0/libdoc/yaml/rdoc/YAML.html[documentation]),
   which use is made transparent by encapsulation into class `NetSec::Node`.
+
+== Protocol Implementation
+Given protocol is implemented in `NetSec::KeyExchange#start!` method. +
+Correctness is proven at the end by printing keys hold by **A** and **B**,
+which are obviously the same in case the protocol works correctly.
+
+To run the exchange, just type at the prompt, from inside the source folder:
+
+[source,bash]
+bin/key_exchange
+
+The output should be something similar to:
+
+[source,bash]
+A has key: ["ec3c14b45353c9e4"]
+B has key: ["ec3c14b45353c9e4"]
