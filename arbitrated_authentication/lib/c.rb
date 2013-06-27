@@ -2,7 +2,7 @@ require 'node'
 
 module NetSec
   class C < Node
-    KEY_SIZE = 32 # For AES-256
+    KEY_SIZE = 256 / 8 # For AES-256
 
     def initialize(id, channel)
       super(id, channel)

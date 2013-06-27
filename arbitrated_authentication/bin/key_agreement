@@ -2,6 +2,6 @@
 
 $: << File.join(File.dirname(__FILE__), '..', 'lib')
 
-require 'key_exchange'
+require 'key_agreement'
 
-NetSec::KeyExchange.start!
+NetSec::KeyAgreement.new.start!

@@ -44,7 +44,7 @@ which are obviously the same in case the protocol works correctly.
 To run the exchange, just type at the prompt, from inside the source folder:
 
 [source,bash]
-bin/key_exchange
+bin/key_agreement
 
 The output should be something similar to:
 
@@ -95,4 +95,4 @@ latexmath:[k_C']. On the other side, **C** would then decrypt received messages
 using its private key latexmath:[k_C]. With this simple improvement, the only
 way for an attacker to perform the same spoofing attack would be to steal
 **C**'s private key, which is supposed to be an event with low probability of
-success given the assumptions of asymmetric cryptography.
+success given the assumptions on which  asymmetric cryptography is based.
