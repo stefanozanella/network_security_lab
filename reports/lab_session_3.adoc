@@ -1,4 +1,6 @@
 = Network Security Class Lab Session 3
+Stefano Zanella - 621796
+A.Y. 2012-13
 
 == Implementation Details
 Here are the choices made where requested by the assignment or when no further

@@ -1,4 +1,5 @@
 = Network Security Class Lab Session 1
+:author: Stefano_Zanella_-_621796
 
 == Implementing the decryption procedure
 Instead of copy/pasting the code, I slightly modified the original
