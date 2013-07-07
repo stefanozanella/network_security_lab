@@ -138,27 +138,57 @@ following idea to both the plaintext and the key:
 If we memorize the columns obtained as ciphertexts, after shifting the pulse
 array by its whole length we can obtain the full $\mathbf{A}$ or
 $\mathbf{B}$ matrix. Then, we can just perform the same procedure
-another time swapping the roles of the two ipnuts to obtain the other missing
+another time swapping the roles of the two inputs to obtain the other missing
 matrix.
 
 \subsection*{Implementation Caveats}
 We developed our model under the assumption of matrix $\mathbf{A}$
-being invertible. Unfortunately, it turns out that wht the given Feistel cipher
+being invertible. Unfortunately, it turns out that with the given Feistel cipher
 implementation, the key multiplication matrix doesn't have full rank but
 instead has \textbf{2 linearly dependent} rows/columns. This prevents us to invert
-the $\mathbf{A}$ matrix. Still, we can get over this problem by using
-the \texttt{gflineq} function in Matlab, which finds a particular solution of the
-linear equation $\mathbf{A}\mathbf{x} = \mathbf{b}$ over a Galois field of
-given (prime number) size.
-
+the $\mathbf{A}$ matrix. Still, we can get over this problem by using Gaussian
+elimination over a Galois field, provided by the \texttt{gflineq} function (see
+References).
 It is worth noting how this little complication in the resolution of the
 system eventually proves the cipher to be even weaker than supposed: in fact,
-since $rank(\mathbf{A}) = 30$, 2 of the 32 bits the key is composed
-of are dependent from the others, so the key space an attacker has to search in is
-reduced by a factor 4. This doesn't give a direct advantage to the cryptanalyst
+since $rank(\mathbf{A}) = 30$, for each given key, there are $2^2-1$ that
+represent the same exact map between message and ciphertext spaces. This mean
+one could reduce the search space by a factor 4 in case of a bruteforce attack.
+This doesn't give a direct advantage to the cryptanalyst
 in this case, since solving the linear equation is a more efficient way to
-break the system; however, it will be shown later how this helps in breaking
+break the system than bruteforcing; however, it will be shown later how this helps in breaking
 the nearly-linear Feistel cipher.
+
+\subsection*{Equivalent Keys}
+Given the last observation it's also worth noting how we can find the set of
+equivalent keys corresponding to a particular solution. \\
+The focal point is the XORing of the key bits in the round function. Basically,
+we can see from the truth table of the XOR function that given two bits $x$
+and $y$, $x \oplus y = \bar{x} \oplus \bar{y}$. This in itself means that given
+any input, encrypting or decrypting with a key produces the same output of
+applying the same operation with its \textbf{bitwise complement}. \\
+Furthermore, if we look at the cipher implementation, we notice that the subkey generation
+function treats the key as two independent halves (bits belonging to one half
+of the key never end up in the other half after subkey generation). At the same
+time, the round function relates each bit of the input with two
+\textbf{adjacent} bits of the key. Putting these two last observations
+together, we obtain that the composition of the round function and subkey
+generation is done independently on the two halves of the key and the input.
+This, combined with what already said, means that we can obtain equivalent keys
+by picking for each half of the key \textbf{its original form or its bitwise
+complement}. It's easy to see how this freedom partitions the key space in sets of
+equivalent keys each of size 4.
+
+To better explain, let's look at an example. Given a key
+\begin{verbatim}
+12345678 == 0001001000110100|0101011001111000
+\end{verbatim}
+its equivalent are:
+\begin{verbatim}
+EDCBA987 == 1110110111001011|1010100110000111
+1234A987 == 0001001000110100|1010100110000111
+EDCB5678 == 1110110111001011|0101011001111000
+\end{verbatim}
 
 \subsection*{Attack Implementation}
 The impulse response of the system is calculated in the \texttt{impulse\_response}
@@ -169,9 +199,15 @@ known-text pair and then compares it with the other known pairs as a proof of
 correctness.
 
 The key resulting from running the cryptanalysis script with the KPA set \#3 is:
-
 \begin{verbatim}
   C3F8177E
+\end{verbatim}
+
+and its equivalent are:
+\begin{verbatim}
+  3C07E881
+  3C07177E
+  C3F8E881
 \end{verbatim}
 
 \section{Nearly-linear cryptanalysis (4 rounds, 8 bits)}
@@ -236,18 +272,58 @@ independent equations, we need to account for a certain amount of freedom when
 solving the system.
 
 In fact, in the given case, applying this technique holds a matrix of rank
-\textbf{29} instead of the expected \textbf{30}. A step further can then be done by also
+\textbf{29} instead of the expected \textbf{30}. In should be noted that,
+whatever the rank obtained, any particular solution of the given system will
+correctly encrypt all known plaintexts into their corresponding known
+ciphertexts (and viceversa); this result holds by construction of the linear
+equation system itself. However, unless the rank is full, we still can't be sure
+that a particular key solving the system is the \emph{right} key we're looking
+for. \\
+
+A step further can be done in this direction by trying to list \emph{all} keys
+satisfying the system. This can be done by
 collecting those expressions that didn't allow us to infer valid equations for
-the system; then, they can be appended to the matrix by manually setting the
-corresponding known value each time at a different value. This way we can
-perform a brute force attack just on the part of the problem we can't gather
-information about. This allows to reduce the search space from
-$2^{32}$ to $2^2$ bits.
+the system during the discovery phase; then, they can be appended to the matrix by
+manually setting the corresponding constant each time at either $0$ or $1$.
+This way we can perform a brute force attack just on the part of the problem we
+can't gather information about. This allows to reduce the search space from
+$2^{32}$ to $2$ keys.
 
-\subsection*{Matlab vs Octave Issues and Workarounds}
-Since in Octave there isn't a function to solve systems of linear equations
-over a Galois Field, a function \texttt{gflineq} has been added, whose original
-implementation has been found at:
+This process has been implemented in two functions:
+\texttt{find\_valid\_lineq\_for\_mitm} and \texttt{feistel\_mitm\_cryptanalysis}. The
+first discovers all equations for a given plain-ciphertext pair, returning two
+matrices, one containing valid equations and one containing the expressions
+representing the degree of freedom. \\
+The second function, instead, iterates over all given text pairs building the
+overall system of linear equations, then applying those that have free
+constants and solving it iteratively, each time setting the free constants to a
+different value.
 
-\url{http://read.pudn.com/downloads64/sourcecode/others/224341/ldpc_toolkit/gflineq.m__.htm}.
+In the particular case solved with this technique,
+\texttt{find\_valid\_lineq\_for\_mitm} were able to find $75$ equations over the
+key bits, put into a matrix of rank $29$, and $2$ equations with unkown
+constant value. For $2$ instances of the $4$ possible systems obtainable by
+setting the unknown constants, there were no solution; the other two, instead,
+provided the two expected keys; these keys, in turn, given the considerations
+done in the preceding sections, form a set containing them, their complements
+and combinations. As a result, we can say that the key used to produce the
+given text pairs belong to the following set:
+\begin{verbatim}
+E176A1CE
+1E895E31
+E1765E31
+1E89A1CE
+1E76A1CE
+E1895E31
+1E765E31
+E189A1CE
+\end{verbatim}
+
+\section{References}
+\begin{itemize}
+  \item Since in Octave there isn't a function to solve systems of linear equations
+        over a Galois Field, a function \texttt{gflineq} has been added, whose original
+        implementation has been found at: \\
+        \url{http://read.pudn.com/downloads64/sourcecode/others/224341/ldpc_toolkit/gflineq.m__.htm}.
+\end{itemize}
 \end{document}

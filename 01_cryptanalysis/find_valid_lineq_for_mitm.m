@@ -5,11 +5,11 @@ function [A, b, F] = find_valid_lineq_for_mitm(u,x)
 % valid linear equations to be used to infer key bits from the known pairs.
 %
 % Basically, if the encryptor/decryptor is a 2 round nearly linear Feistel
-% cipher, it's possible to calculate u_r ^ x_l and u_l ^ x_r and
-% compare them with F(u_l, k1) and F(x_l, k2) respectively.
+% cipher, it's possible to calculate uR ^ xL and uL ^ xR and
+% compare them with F(uL, k1) and F(xL, k2) respectively.
 % Each bitwise comparison can give some certainty about XORs of pairs of key
 % bits, thus allowing for construction of a system of linear equations over
-% GF(2), solvable with gflineq().
+% GF(2), solvable in principle with gflineq().
 %
 % You can run this function for many known pairs of x and u; just concatenate
 % columns of resulting A and b together to obtain a more vinculated system
@@ -22,122 +22,78 @@ function [A, b, F] = find_valid_lineq_for_mitm(u,x)
 L = length(u);
 
 % Split plaintext and ciphertext in two halves
-u_l = u(1:L/2);
-u_r = u(L/2+1:end);
+uL = u(1:L/2);
+uR = u(L/2+1:end);
 
-x_l = x(1:L/2);
-x_r = x(L/2+1:end);
+xL = x(1:L/2);
+xR = x(L/2+1:end);
 
 % Calculate notable values for subsequent inference
 % Known equations are:
-%   x_l ^ u_r = F(u_l, k1)
-%   x_r ^ u_l = F(x_l, k2)
-% Let's just rename the two XORs to h1 and h2, so that:
-%   h1 = F(u_l, k1)
-%   h2 = F(x_l, k2)
-h1 = xor(u_r, x_l);
-h2 = xor(u_l, x_r);
+%   xL ^ uR = F(uL, k1)
+%   xR ^ uL = F(xL, k2)
+F_k1_uL = xor(uR, xL);
+F_k2_xL = xor(uL, xR);
 
 % Now, let's expand the value of F:
-%   h1 = u_l | (odd(k1) ^ even(k1))
-%   h2 = x_l | (odd(k2) ^ even(k2))
-% Here, if we compare the values of the bit in position j of h1 and bit in
-% position j of u_l we can infer the following :
-%   * if they're both 0, then the xor must equate to 0
-%   * if bit of u_l is 0 and bit of h1 is 1, then the xor must equate to 1
+%   F_k1_uL = uL | (k1_j ^ k1_j+1)
+%   F_k2_xL = xL | (k2_j ^ k2_j+1)
+% Here, if we compare the values of the bit in position j of F_k1_uL and bit in
+% position j of uL we can infer the following :
 %   * if they're both 1, we can't say anything about the value of the xor
+%   * if bit of uL is 0, then the xor must equate to the value of the bit of F_k1_uL
 %   * if bit of u_l is 1 and bit of h1 is 0, then there must be something broken
 %     since boolean algebra doesn't allow this situation :-)
-% All this considerations can be summed up nicely with the expression 
-%   ~ h1_j & u_l_j
-% if this is 1, then we know that the corresponding bit of odd(k1) ^ even(k1)
-% is equal to h1_j ^ u_l_j
-useful_positions_1 = not(h1 & u_l);
-useful_positions_2 = not(h2 & x_l);
+% So, we can gather a list of pair of key bits that can be put in relation.
+% Specifically, for every bit of the plain or ciphertext set at 0, we can build
+% an equation on a pair of key bits in the form k_b1 XOR k_b2 = {0|1}. To know
+% the index of the key bits for which we can infer information, we can use the
+% subkey generation function over an array of indexes (instead of the key
+% itself) and split them the same way the round function does, actually
+% building a matrix where columns contain the indexes of key bit pairs
+% contributing to a single bit of the round function's output. Then we perform
+% an element wise multiplication, so the output will contain just the indexes
+% for which we can build exact equations.
+% Finally, we will use these two matrices (one for F_k1_uL and one for F_k2_xL)
+% to build a matrix of solvable equations over GF(2).
+good_indexes_k1 = [half_outward_shift(1:32, 1)(1:2:end) .* ~uL; half_outward_shift(1:32, 1)(2:2:end) .* ~uL];
+good_indexes_k2 = [half_outward_shift(1:32, 2)(1:2:end) .* ~xL; half_outward_shift(1:32, 2)(2:2:end) .* ~xL];
 
-% Expanding this a little further, if we look at how the subkey generation
-% function works, we notice that we can even determine the expression of the
-% j-th bit of odd(k1) ^ even(k1). Basically, it is the XOR of two adjacent bits of
-% the key k, specifically bit (2j + round - 1) mod L and (2j + round) mod L
-% (with round in [1,2] - in the code below we need to adjust index calculation
-% to account the fact that MatLab indexes start at 1). It is now clear that we can
-% build from this information a linear equation of two variables in GF(2), with
-% variables being exact bits of the key we're trying to recover, and known value
-% set to
-%   h_j ^ u_l_j
-% for the first equation, and to
-%   h_j ^ x_l_j
-% for the second one.
-% Iterating over all useful bits
-% (see above) we can then build the function's output matrices
+bad_indexes_k1 = [half_outward_shift(1:32, 1)(1:2:end) .* uL; half_outward_shift(1:32, 1)(2:2:end) .* uL];
+bad_indexes_k2 = [half_outward_shift(1:32, 2)(1:2:end) .* xL; half_outward_shift(1:32, 2)(2:2:end) .* xL];
 
-A = [];
-b = [];
-F = [];
+A = b = F = [];
 
-for j = 0:(length(useful_positions_1)/2-1)
-  key_bit_1 = mod(2*j+1, 16)+1;
-  key_bit_2 = mod(2*j+2, 16)+1;
+for j = 1:(L/2)
+  eq = zeros(1,L);
 
-  a_i = zeros(1, L);
-  a_i(key_bit_1) = 1;
-  a_i(key_bit_2) = 1;
+  if (good_indexes_k1(1,j))
+    eq(1,good_indexes_k1(1,j)) = 1;
+    eq(1,good_indexes_k1(2,j)) = 1;
 
-  b_i = xor(h1(j+1), u_l(j+1));
-
-  if (useful_positions_1(j+1))
-    A = [ A; a_i ];
-    b = [ b; b_i ];
+    A = [A ; eq];
+    b = [b ; F_k1_uL(1,j)];
   else
-    F = [ F; a_i ];
+    eq(1,bad_indexes_k1(1,j)) = 1;
+    eq(1,bad_indexes_k1(2,j)) = 1;
+
+    F = [F; eq];
   end
+end
 
+for j = 1:(L/2)
+  eq = zeros(1,L);
 
-  key_bit_1 = mod(31 - mod(-2*j, 16), 32) + 1;
-  key_bit_2 = mod(31 - mod(-2*j - 1, 16), 32) + 1;
+  if (good_indexes_k2(1,j))
+    eq(1,good_indexes_k2(1,j)) = 1;
+    eq(1,good_indexes_k2(2,j)) = 1;
 
-  a_i = zeros(1, L);
-  a_i(key_bit_1) = 1;
-  a_i(key_bit_2) = 1;
-
-  b_i = xor(h1(j+9), u_l(j+9));
-
-  if (useful_positions_1(j+9))
-    A = [ A; a_i ];
-    b = [ b; b_i ];
+    A = [A ; eq];
+    b = [b ; F_k2_xL(1,j)];
   else
-    F = [ F; a_i ];
-  end
+    eq(1,bad_indexes_k2(1,j)) = 1;
+    eq(1,bad_indexes_k2(2,j)) = 1;
 
-  key_bit_1 = mod(2*j+2, 16)+1;
-  key_bit_2 = mod(2*j+3, 16)+1;
-
-  a_i = zeros(1, L);
-  a_i(key_bit_1) = 1;
-  a_i(key_bit_2) = 1;
-
-  b_i = xor(h2(j+1), x_l(j+1));
-
-  if (useful_positions_2(j+1))
-    A = [ A; a_i ];
-    b = [ b; b_i ];
-  else
-    F = [ F; a_i ];
-  end
-
-  key_bit_1 = mod(31 - mod(-2*j - 1, 16), 32) + 1;
-  key_bit_2 = mod(31 - mod(-2*j - 2, 16), 32) + 1;
-
-  a_i = zeros(1, L);
-  a_i(key_bit_1) = 1;
-  a_i(key_bit_2) = 1;
-
-  b_i = xor(h2(j+9), x_l(j+9));
-
-  if (useful_positions_2(j+9))
-    A = [ A; a_i ];
-    b = [ b; b_i ];
-  else
-    F = [ F; a_i ];
+    F = [F; eq];
   end
 end
