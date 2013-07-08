@@ -1,7 +1,7 @@
 clear all; close all; clc;
 
 ntry = 1000; 	% number of iterations
-lu = 2; 		% message length
+lu = 3; 		% message length
 lx = 7; 		% codeword length
 lv = 4; 		% randomized information word length
 nerrB = 1;      % number of errors randomly introduced on A-B channel

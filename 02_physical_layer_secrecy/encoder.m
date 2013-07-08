@@ -10,6 +10,6 @@ b = [repmat(b,1,floor(lv/lb)),zeros(rem(lv,lb))];
 v = xor([zeros(1,lb), u], b);
 
 % Hamming encoding
-x = encode(double(v),lx,lv,'hamming');
+x = encode(double(v),lx,lv,'hamming')';
 
 end
