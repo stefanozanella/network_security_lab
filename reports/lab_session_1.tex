@@ -18,6 +18,22 @@
 
 \maketitle
 
+\section{Assignment}
+A C and Matlab codebase is given, containing the implementation of a linear and
+a nearly-linear Feistel ciphers, plus three sets of plaintext/ciphertext pairs for
+different cipher instances and keys. The assignment is as follows:
+\begin{itemize}
+  \item implement the \texttt{feistel\_decrypt} procedure;
+  \item carry out a KPA on the linear Feistel cipher with 8 rounds and 32 bit
+        key and plaintext;
+  \item carry out a KPA on the nearly linear Feistel cipher with 4 rounds and 8
+        bit key and plaintext, and evaluate its success rate;
+  \item carry out a KPA on the nearly linear Feistel cipher with 2 rounds and
+        32 bit key and plaintext, and evaluate its success rate.
+\end{itemize}
+
+\newpage
+
 \section{Implementing the decryption procedure}
 Instead of copy/pasting the code, I slightly modified the original
 \texttt{feistel\_encrypt} function so that it can work 
@@ -306,7 +322,7 @@ constant value. For $2$ instances of the $4$ possible systems obtainable by
 setting the unknown constants, there were no solution; the other two, instead,
 provided the two expected keys; these keys, in turn, given the considerations
 done in the preceding sections, form a set containing them, their complements
-and combinations. As a result, we can say that the key used to produce the
+and combinations of the two. As a result, we can say that the key used to produce the
 given text pairs belong to the following set:
 \begin{verbatim}
 E176A1CE
@@ -318,6 +334,13 @@ E1895E31
 1E765E31
 E189A1CE
 \end{verbatim}
+
+Furthermore, given the considerations about equivalent keys, we can state that
+the set is composed of $2$ partitions, each containing $4$ equivalent keys, so
+with just the given set of known text pairs if we pick a key to decrypt further
+transmissions the success rate is $50\%$ (or $100\%$ if we consider decrypting
+with two distinct keys and under the assumption we can discriminate between
+good and bad decrypted messages).
 
 \section{References}
 \begin{itemize}
