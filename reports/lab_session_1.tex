@@ -227,6 +227,43 @@ and its equivalent are:
 \end{verbatim}
 
 \section{Nearly-linear cryptanalysis (4 rounds, 8 bits)}
+In this case the short length of the key makes quite feasible the simplest of
+the attacks: bruteforcing. Furthermore, we can rely on the properties described
+in the preceding section to even lower the number of keys we need to try.
+
+With a plain bruteforce attack, we would need to scan $2^{l_k} = 2^8 = 256$
+keys. But, if we consider that the key space is partitioned into subsets of
+cardinality $4$, then we need to try just one key per subset to decide if it
+works or not. To do this, we divide the key in two halves, each of length $l_t
+= l_x / 2$. Then it's easy to see that given a binary representation of a
+number $n \leq 2^{l_t}/2-1$, for its complement $\bar{n}$ holds $\bar{n} \geq
+2^{l_t}/2$. So, for every key half, we just need to count up to $2^{l_t}/2-1 =
+2^{l_t-1}-1 = 7$. Combining the two halves, we need to scan a total of
+$2^{l_t-1} \cdot 2^{l_t-1} = 2^{2 l_t - 2} = 2^{l_x - 2} = 2^6 = 64$ keys, as
+expected given the cardinality of the subsets. \\
+If we find a matching key, we can then rely on the structure of equivalent keys
+depicted in the preceding section to derive the other 3 matching keys belonging
+to the same subset as the key found by trial.
+
+This refined bruteforce attack is implemented in the
+\texttt{feistel\_nearly\_linear\_bruteforce} function, which can be called as:
+\begin{lstlisting}
+keys = feistel_nearly_linear_bruteforce('KPAnonlinear8.hex', 8, 4);
+\end{lstlisting}
+Then \texttt{keys} contains all the keys that successfully encrypted known
+plaintexts into their respective known ciphertexts.
+
+In our case, the set of matching keys is the following:
+\begin{verbatim}
+45
+BA
+4B
+B4
+\end{verbatim}
+which means that there is a single subset of equivalent keys that correctly
+encrypt \emph{all} plaintexts. That said, we can state that the success
+probability of the attack is $1$.
+
 \section{Nearly-linear cryptanalysis (2 rounds, 32 bits)}
 Since only 2 rounds are performed here, we can use a \emph{meet in the middle}
 technique. \\
