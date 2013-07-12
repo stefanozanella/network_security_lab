@@ -1,10 +1,10 @@
-function AWGNscript(trials,split)
+function AWGNscript(trials,split, db_snrB, db_snrE)
 ntry = trials; 	% number of iterations
 lu = 3; 		% message length
 lx = 7; 		% codeword length
 lv = 4; 		% randomized information word length
-dBsnrB = 30; 	% Signal-To-Noise ratio (in dB) of the channel to Bob
-dBsnrE = 10; 	% Signal-To-Noise ratio (in dB) of the channel to Eve
+dBsnrB = db_snrB; 	% Signal-To-Noise ratio (in dB) of the channel to Bob
+dBsnrE = db_snrE; 	% Signal-To-Noise ratio (in dB) of the channel to Eve
 lM = 7; 		% number of bits per symbol; lM must divide lx
 
 snrB = 10^(dBsnrB/10); 	% SNR to Bob 
@@ -67,18 +67,12 @@ fprintf('BER at Eve       = %.2e\n', berE);
 end
 
 delete(bar)
-figure;
-stem(berE_data);
-xlabel(sprintf('trials x %d', trials));
-ylabel('BER_E');
-grid on
-axis tight
-print('awgn_ber_e.eps', '-deps');
 
 figure;
-stem(berB_data);
-xlabel(sprintf('trials x %d', trials));
-ylabel('BER_B');
+plot(x, berB_data, 'x;BER_B;', x, berE_data, 'o;BER_E;', [x(1), x(end)], [0.5, 0.5], ';target BER_E;');
+hold on;
+xlabel('trials');
+ylabel('BER');
 grid on
 axis tight
-print('awgn_ber_b.eps', '-deps');
+print('../reports/uec_ber.eps', '-deps');

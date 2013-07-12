@@ -700,8 +700,53 @@ eavesdropper side is a necessary condition for (perfect) secrecy.
 
 \section{AWGN Channel}
 
-- we can rely only on BER
-- there isn't strong correlation b/w num of trials and improvement over BER ->
-you can also say why
-- we keep number of trials low for that reason.
+Now we try to analyze the kind of secrecy achievable in a more realistic model.
+We consider the case of an AWGN channel, with different SNRs at the legitimate
+receiver end and at the eavesdropper end. We still consider the case of $l_x =
+7, l_u = 4$ and still perform the same kind of encoding of the secret message
+$u$ into the codeword $x$ by means of the \texttt{Hamming(7,4)} code. Then, we
+take the codeword and perform a \textbf{128-PAM modulation} step. After that,
+we simulate transmission over an AWGN channel using Matlab/Octave builtin
+functions. Finally, we let both the eavesdropper and the legitimate receiver
+decode the received signal.
+
+Clearly, in this case we are not considering the transmission over a binary
+medium anymore. Instead, we are dealing with a continuous signal; for this reason, we
+cannot apply the information theory functions and metrics (entropy, etc.) as we
+have done in the previous cases. So, the only metric we can rely upon for the
+analysis is BER, which, as we've already seen, it is just a necessary condition
+for (perfect) secrecy.
+
+\subsection*{Number of transmissions}
+As we've already seen in both the previous cases, BER doesn't show much
+correlation with the number of transmissions over which we calculate it. So,
+for this case we limit the number of observations to 2000 per model instance.
+This makes each simulation faster, allowing for a broader range of trial
+values.
+
+\subsection*{Secrecy Capacity}
+As we've done in the BSC case, we can derive a formulation of the secrecy
+capacity as a function of $\text{SNR}_B$ and $\text{SNR}_E$ and plot this
+function to find interesting regions to analyze. Though, in contrast with the
+other cases, here we can achieve (at least theoretically) unconstrained secrecy
+capacity. This can be seen at first by looking at the expression for $C_s$:
+\[
+  C_s = \frac{1}{2} [ \log_2(1+\Lambda_B) - \log_2(1+\Lambda_E) ]
+\]
+that is, if we let $\Lambda_B$ increase and $\Lambda_E$ decrease, the function
+will increase without bound. \\
+For practical reasons, we'll limit our analysis within $0$ and $50 \text{ dB}$.
+
+That said, using the expression above for secrecy capacity, we can see how it
+evolves with respect to $\Lambda_B$ and $\Lambda_E$ in
+Figure~\ref{fig:awgn_mesh_cs}.
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[scale=0.8]{awgn_mesh_cs.jpg}
+  \caption{Evolution of secrecy capacity as a function of
+  $\Lambda_B$ and $\Lambda_E$}
+  \label{fig:awgn_mesh_cs}
+\end{figure}
+
 \end{document}
