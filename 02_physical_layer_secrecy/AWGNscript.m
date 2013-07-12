@@ -1,7 +1,6 @@
-clear all; close all; clc;
-
-ntry = 1000; 	% number of iterations
-lu = 2; 		% message length
+function AWGNscript(trials,split)
+ntry = trials; 	% number of iterations
+lu = 3; 		% message length
 lx = 7; 		% codeword length
 lv = 4; 		% randomized information word length
 dBsnrB = 30; 	% Signal-To-Noise ratio (in dB) of the channel to Bob
@@ -21,11 +20,15 @@ R = lu/lx*lM;					 	   % secrecy rate
 xall = zeros(2^lv, lx/lM);
 for iv = 1:2^lv 
     v = de2bi(iv-1,lv);
-    xall(iv,:) = PAMbitmap(encode(v,lx,lv,'hamming'),lx,lM);
+    xall(iv,:) = PAMbitmap(encode(v,lx,lv,'hamming')',lx,lM);
 end
+
+berB_data = [];
+berE_data = [];
 
 bar = waitbar(0,'Simulation in progress');
 
+for j = 1:split
 for i = 1:ntry
     
     u = randi([0 1], 1, lu);
@@ -50,12 +53,32 @@ for i = 1:ntry
     
 end
 
-berB = errorsB/(ntry*lu);
-berE = errorsE/(ntry*lu);
+berB = errorsB/(ntry*j*lu);
+berE = errorsE/(ntry*j*lu);
+
+berB_data(j) = berB;
+berE_data(j) = berE;
 
 fprintf('Secrecy capacity = %.4f\n', Cs);
 fprintf('Secrecy rate     = %.4f\n', R);
 fprintf('BER at Bob       = %.2e\n', berB);
 fprintf('BER at Eve       = %.2e\n', berE);
 
+end
+
 delete(bar)
+figure;
+stem(berE_data);
+xlabel(sprintf('trials x %d', trials));
+ylabel('BER_E');
+grid on
+axis tight
+print('awgn_ber_e.eps', '-deps');
+
+figure;
+stem(berB_data);
+xlabel(sprintf('trials x %d', trials));
+ylabel('BER_B');
+grid on
+axis tight
+print('awgn_ber_b.eps', '-deps');

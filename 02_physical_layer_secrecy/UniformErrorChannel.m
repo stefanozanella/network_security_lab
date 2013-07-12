@@ -18,3 +18,5 @@ err = err_patterns(randi(Nydx,1),:);
 
 % add the error to the received word
 y = xor(err,x);
+
+%txerr = randi([0 nerr]);

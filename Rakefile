@@ -7,6 +7,8 @@ task :pdf do
   FileUtils.cd 'reports' do
     FileList['*.tex'].each do |report|
       system("pdflatex -output-directory=#{File.join('..', dest_dir)} #{report}")
+      # Do it twice to get references work
+      system("pdflatex -output-directory=#{File.join('..', dest_dir)} #{report}")
     end
   end
 

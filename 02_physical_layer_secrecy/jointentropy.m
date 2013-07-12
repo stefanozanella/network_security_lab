@@ -1,4 +1,4 @@
-function [Hxy,Hx,Hy,Hxdy,Hydx,Ixy] = jointentropy(pxy)
+function [Hxy,Hx,Hy,Hxdy,Hydx,Ixy] = jointentropy(pxy, trials, plot_prefix)
 
 % pxy(i,j) = P[x = i, y = j],
 
@@ -16,7 +16,9 @@ Hxdy0 = sum(xlogx(pxdy),1);      % H(x|y=0)
 
 figure;
 stem(Hxdy0);
+title(sprintf('Trials: %d', trials));
 xlabel('w [codeword, 7 bit]');
 ylabel('H_{u|z=0}(w)');
 grid on
 axis tight
+print(sprintf('../reports/%s_%d.eps', plot_prefix, trials), '-deps');

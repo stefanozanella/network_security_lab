@@ -1,6 +1,6 @@
-clear all; close all; clc;
+function UECscript(trials, split)
 
-ntry = 1000; 	% number of iterations
+ntry = trials; 	% number of iterations
 lu = 3; 		% message length
 lx = 7; 		% codeword length
 lv = 4; 		% randomized information word length
@@ -28,8 +28,11 @@ histogram = zeros(2^lu,2^lx);
 errorsB = 0; % counter for the number of errors at Bob
 errorsE = 0; % counter for the number of errors at Eve
 
+Hudz_data = berB_data = berE_data = [];
+
 bar = waitbar(0,'simulation in progress');
 
+for j = 1:split
 for i = 1:ntry
     
     u = randi([0 1], 1, lu);
@@ -57,16 +60,18 @@ for i = 1:ntry
     histogram(uind, zind) = histogram(uind, zind) + 1;
 
     waitbar(i/ntry,bar)
-    
 end
 
-berB = errorsB/(ntry*lu);
-berE = errorsE/(ntry*lu);
+berB = errorsB/((ntry*j)*lu);
+berE = errorsE/((ntry*j)*lu);
 
-delete(bar)
+[Huz,Hu,Hz,Hudz,Hzdu,Iuz] = jointentropy(histogram/(ntry*j), ntry*j, 'uec');
 
-[Huz,Hu,Hz,Hudz,Hzdu,Iuz] = jointentropy(histogram/ntry);
+Hudz_data(j) = Hudz;
+berB_data(j) = berB;
+berE_data(j) = berE;
 
+fprintf('Metrics with %d trials:\n', ntry*j);
 fprintf('Secrecy capacity = %.4f\n', Cs);
 fprintf('Secrecy rate     = %.4f\n', R);
 fprintf('BER at Bob       = %.2e\n', berB);
@@ -78,3 +83,27 @@ fprintf('H(u,z) = %.4f bit\n', Huz);
 fprintf('H(u|z) = %.4f bit\n', Hudz);
 fprintf('H(z|u) = %.4f bit\n', Hzdu);
 fprintf('I(u;z) = %.4f bit\n', Iuz);
+fprintf('\n');
+
+end
+
+delete(bar)
+
+x = trials:trials:trials*split;
+
+figure;
+plot(x, Hudz_data, '+;H_{u|z};', [x(1), x(end)], [lu, lu], ';lu;');
+xlabel('trials');
+ylabel('H_u|z');
+grid on
+axis auto
+print('../reports/uec_Hudz.eps', '-deps');
+
+figure;
+plot(x, berB_data, 'x;BER_B;', x, berE_data, 'o;BER_E;', [x(1), x(end)], [0.5, 0.5], ';target BER_E;');
+hold on;
+xlabel('trials');
+ylabel('BER');
+grid on
+axis tight
+print('../reports/uec_ber.eps', '-deps');
