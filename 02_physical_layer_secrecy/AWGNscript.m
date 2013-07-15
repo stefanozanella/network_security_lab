@@ -1,11 +1,16 @@
-function AWGNscript(trials,split, db_snrB, db_snrE)
+function [berB_data, berE_data] = AWGNscript(trials,split, dBsnrB_a, dBsnrE_a)
 ntry = trials; 	% number of iterations
 lu = 3; 		% message length
 lx = 7; 		% codeword length
 lv = 4; 		% randomized information word length
-dBsnrB = db_snrB; 	% Signal-To-Noise ratio (in dB) of the channel to Bob
-dBsnrE = db_snrE; 	% Signal-To-Noise ratio (in dB) of the channel to Eve
 lM = 7; 		% number of bits per symbol; lM must divide lx
+
+berB_data = [];
+berE_data = [];
+
+for k = 1:length(dBsnrB_a)
+dBsnrB = dBsnrB_a(k); 	% Signal-To-Noise ratio (in dB) of the channel to Bob
+dBsnrE = dBsnrE_a; 	% Signal-To-Noise ratio (in dB) of the channel to Eve
 
 snrB = 10^(dBsnrB/10); 	% SNR to Bob 
 snrE = 10^(dBsnrE/10);	% SNR to Eve
@@ -22,9 +27,6 @@ for iv = 1:2^lv
     v = de2bi(iv-1,lv);
     xall(iv,:) = PAMbitmap(encode(v,lx,lv,'hamming')',lx,lM);
 end
-
-berB_data = [];
-berE_data = [];
 
 bar = waitbar(0,'Simulation in progress');
 
@@ -52,27 +54,31 @@ for i = 1:ntry
     waitbar(i/ntry,bar)
     
 end
+end
 
-berB = errorsB/(ntry*j*lu);
-berE = errorsE/(ntry*j*lu);
+berB = errorsB/(ntry*split*lu);
+berE = errorsE/(ntry*split*lu);
 
-berB_data(j) = berB;
-berE_data(j) = berE;
+berB_data(k) = berB;
+berE_data(k) = berE;
 
 fprintf('Secrecy capacity = %.4f\n', Cs);
 fprintf('Secrecy rate     = %.4f\n', R);
 fprintf('BER at Bob       = %.2e\n', berB);
 fprintf('BER at Eve       = %.2e\n', berE);
+fprintf('\n');
+
+delete(bar)
 
 end
 
-delete(bar)
+x = dBsnrB_a;
 
 figure;
 plot(x, berB_data, 'x;BER_B;', x, berE_data, 'o;BER_E;', [x(1), x(end)], [0.5, 0.5], ';target BER_E;');
 hold on;
-xlabel('trials');
+xlabel('SNR_B [dB]');
 ylabel('BER');
 grid on
 axis tight
-print('../reports/uec_ber.eps', '-deps');
+print('../reports/awgn_ber.eps', '-deps');

@@ -741,7 +741,7 @@ That said, using the expression above for secrecy capacity, we can see how it
 evolves with respect to $\Lambda_B$ and $\Lambda_E$ in
 Figure~\ref{fig:awgn_mesh_cs}.
 
-\begin{figure}[p]
+\begin{figure}[h]
   \centering
   \includegraphics[scale=0.8]{awgn_mesh_cs.jpg}
   \caption{Evolution of secrecy capacity as a function of
@@ -749,4 +749,39 @@ Figure~\ref{fig:awgn_mesh_cs}.
   \label{fig:awgn_mesh_cs}
 \end{figure}
 
+As in the previous cases, here too we observe that secrecy capacity decreases as
+$\Lambda_E$ increase, no matter how high the value for $\Lambda_B$ is. We
+also see that even in an extreme case like $\Lambda_B = 50 \text{ dB},
+\Lambda_E = 5 \text{ dB}$ we only reach $C_s \simeq 1.54$, while we send at
+\[
+  R_s = l_M \frac{l_u}{l_x} = 7 \cdot \frac{3}{7} = 3 
+\]
+Looking at this last expression, we can have a clue on a possible way to make
+the secrecy rate fit into channel's secrecy capacity. In fact, we see that in
+the expression it's included the ratio $l_M / l_x$, which is the code rate of
+the modulation system. In our case this
+ratio is $1$, because we have a direct mapping between one message and the
+symbol used to perform amplitude modulation. But we can think of sending
+longer messages so that they're split into more symbols; in this case, we'll
+have $l_M / l_x < 1$, thus allowing for secrecy rate adjustment to fit
+available secrecy capacity.
+The problem, then, is that of finding a suitable combination of
+parameter $M = 2^{l_M}$ and codeword length $l_x$. For example, if we mantain
+the Hamming encoding as is, we need to use a length in the form $l_x = 2^r -1$
+(7, 15, 31, etc), which clearly doesn't allow for codewords to be split in an
+integer number of symbols. We can, however, think of modifying the encoding
+scheme (and decoding scheme accordingly) by padding the message with random
+bits so that $l_x' = k \cdot l_M$. For example, we can consider a 256-PAM
+modulation ($l_M = 8$) and the \texttt{Hamming(15,11)} encoding with a 1 bit
+pad so that $l_x' = 16$; this way we'll obtain $R_s = 8 \frac{3}{16} = 1.5$,
+fitting the secrecy capacity we already calculated. \\
+Note, however, that such technique incurs in a major drawback: by splitting the
+message into more symbols, we'll be able to send a complete message (and thus
+we'll be able to decode a secret message) once every $l_M /
+l_x$ symbol periods. That is, by adjusting the code rate we incur in a tradeoff
+between secrecy rate and speed; and the situation is ever worse if we consider
+that we're not aiming at sending all $l_x$ bits of information, but only the
+$l_u << l_x$ secret ones. In the example case (which is, again, very extreme)
+we'll end up with a 16 bit codeword to send a mere 3 bit secret message; so
+there's a 5+ times factor overhead. \\
 \end{document}

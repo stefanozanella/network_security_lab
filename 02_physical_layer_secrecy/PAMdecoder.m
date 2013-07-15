@@ -7,7 +7,7 @@ function uhat = PAMdecoder(y,lu,lv,xall)
 vhat = de2bi(ivhat-1,lv);
 
 % retrieve the random salt from the decoded word
-b = [repmat(vhat(1:lv-lu),1,floor(lv/(lv-lu))),zeros(rem(lv,lv-lu))];
+b = [repmat(vhat(1:lv-lu),1,floor(lv/(lv-lu))),zeros(1, rem(lv,lv-lu))];
 tmp = xor(vhat,b);
 
 % retrieve message

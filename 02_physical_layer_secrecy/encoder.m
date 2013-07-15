@@ -4,7 +4,7 @@ function x = encoder(u,lu,lv,lx)
 lb = lv -lu;
 b = randi([0 1], 1, lb);
 % extend b to lv bits
-b = [repmat(b,1,floor(lv/lb)),zeros(rem(lv,lb))];
+b = [repmat(b,1,floor(lv/lb)),zeros(1, rem(lv,lb))];
 % xor the zero-padded message with b (note that the first
 % lv-lu bits are equal to b)
 v = xor([zeros(1,lb), u], b);
