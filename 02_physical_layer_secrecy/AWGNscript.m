@@ -3,7 +3,7 @@ ntry = trials; 	% number of iterations
 lu = 3; 		% message length
 lx = 7; 		% codeword length
 lv = 4; 		% randomized information word length
-lM = 7; 		% number of bits per symbol; lM must divide lx
+lM = 4; 		% number of bits per symbol; lM must divide lx
 
 berB_data = [];
 berE_data = [];
@@ -19,13 +19,13 @@ errorsB = 0; % counter for the number of errors at Bob
 errorsE = 0; % counter for the number of errors at Eve
 
 Cs = 1/2* (log2(1+snrB)-log2(1+snrE)); % secrecy capacity for the Gaussian channel
-R = lu/lx*lM;					 	   % secrecy rate
+R = lu/ceil(lx/lM);					 	   % secrecy rate
 
 % create a matrix with all PAM encoded symbols
-xall = zeros(2^lv, lx/lM);
+xall = zeros(2^lv, ceil(lx/lM));
 for iv = 1:2^lv 
     v = de2bi(iv-1,lv);
-    xall(iv,:) = PAMbitmap(encode(v,lx,lv,'hamming')',lx,lM);
+    xall(iv,:) = PAMbitmap([encode(v,lx,lv,'hamming')', randi([0 1], 1, lM*ceil(lx/lM)-lx)],lM*ceil(lx/lM),lM);
 end
 
 bar = waitbar(0,'Simulation in progress');
@@ -81,4 +81,4 @@ xlabel('SNR_B [dB]');
 ylabel('BER');
 grid on
 axis tight
-print('../reports/awgn_ber.eps', '-deps');
+print('../reports/awgn_ber_4_7.eps', '-deps');

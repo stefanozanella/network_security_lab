@@ -784,4 +784,131 @@ that we're not aiming at sending all $l_x$ bits of information, but only the
 $l_u << l_x$ secret ones. In the example case (which is, again, very extreme)
 we'll end up with a 16 bit codeword to send a mere 3 bit secret message; so
 there's a 5+ times factor overhead. \\
+Moreover, in the next section we'll see how this technique, while providing a
+promising theoretical result, won't provide more secrecy in practice but, on
+the contrary, will worsen the results.
+
+\subsection*{BER Analysis}
+We'll now try to see how BER evolves with different values of SNRs. We'll fix a
+rather low value of $5 \text{ dB}$ for $\Lambda_E$, and see what happens when
+we variate $\Lambda_B$ on Bob's side. Figure~\ref{fig:awgn_ber} shows the
+trend when we increase $\Lambda_B$ in $5 \text{ dB}$ increment steps.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[scale=0.8]{awgn_ber.eps}
+  \caption{BER vs.
+  $\Lambda_B$ ($\Lambda_E = 5 \text{ dB})$}
+  \label{fig:awgn_ber}
+\end{figure}
+
+The calculated values for Bob's BER are the following:
+
+\begin{tabular}{ | c | c | }
+  \hline
+  \textbf{SNR [dB]} & \textbf{BER} \\
+  \hline
+  10 & 0.46133 \\
+  15 & 0.37367 \\
+  20 & 0.21467 \\
+  25 & 0.05767 \\
+  30 & 0.00833 \\
+  35 & 0.00000 \\
+  40 & 0.00000 \\
+  45 & 0.00000 \\
+  50 & 0.00000 \\
+  \hline
+\end{tabular}
+
+So we see that around 35 dB we can achieve correctness. This is clearly a
+better result with respect to the BSC model, and the value at which we can
+achieve this result is also rather practical.
+
+If we now consider the same series in the plot and the same table applied to
+Eve, we can derive another interesting observation. That is, to reach a level
+of secrecy close enough to that of \textbf{perfect} secrecy, we need the
+eavesdropper to wiretap from a very noisy channel, almost unusable for any kind
+of communication. If we want to relax this strict condition, we need to look at
+other parameters. Specifically, we need to recall that the theoretical analysis
+of channel's secrecy we do relies upon the concept of typical sequences, which
+are as such under the assumption of long transmissions. The kind of encoding
+and modulation adopted for the example are clearly not sufficient to confuse
+the eavesdropper enough so to achieve perfect secrecy.
+
+We can then see what happens if we increase the size of the constellation from
+128 to 256, thus setting $l_M = 8$ and using the variated encoding technique
+depicted in the preceding section.
+Figure~\ref{awgn_ber_8_15} shows the BER for different values of $\Lambda_B$,
+which are reported precisely in the following table:
+
+\begin{tabular}{ | c | c | }
+  \hline
+  \textbf{SNR [dB]} & \textbf{BER} \\
+  \hline
+  10 & 0.367000 \\
+  15 & 0.268333 \\
+  20 & 0.205667 \\
+  25 & 0.113667 \\
+  30 & 0.079000 \\
+  35 & 0.058667 \\
+  40 & 0.045000 \\
+  45 & 0.036333 \\
+  50 & 0.051667 \\
+  \hline
+\end{tabular}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[scale=0.8]{awgn_ber_8_15.eps}
+  \caption{BER vs.
+  $\Lambda_B$ ($\Lambda_E = 5 \text{ dB})$}
+  \label{fig:awgn_ber_8_15}
+\end{figure}
+
+This is a bad result for two reasons:
+\begin{itemize}
+  \item we don't achieve correctness anymore, nor at 35 dB neither at higher
+  SNR values;
+  \item the level of confusion at lower SNRs is decreased.
+\end{itemize}
+We can try to explain this result by pointing out that:
+\begin{itemize}
+  \item as showed in [1] in the chapter about digital modulation, the symbol
+  error probability decreases more slowly with respect to SNR as the
+  size of the constellation increases;
+  \item we are splitting our codeword in two halves, but the concealed message
+  is contained only in the first half, so actually correct demodulation is
+  required in just one every two transmissions in order to correctly decode the
+  secret message, and the BER we're analysing is calculated over wrong decoding
+  of the \emph{secret} message, not the overall message, so a probabilistic advantage is
+  given to the eavesdropper.
+\end{itemize}
+
+\subsection*{Conclusions}
+The last observation, mixed with previous experiments on variation of BER with
+respect to SNR, allow us to draw some conclusion about the simulation.
+
+For what concerns correctness, differently from the BSC model, we can achieve
+it with a proper combination of SNR and modulation scheme. A SNR of 35 dB on
+the legitimate side is sufficient when using 128-PAM and concealing 3 bits.
+
+For what concerns secrecy, with the encoding technique used throughout this
+paper, we cannot achieve perfect secrecy with reasonable values of SNR on the
+eavesdropper side (which means, values that doesn't imply the receiver receives
+nothing). Even if we change constellation size and split the codeword in many
+symbols, we still cannot improve the situation. Moreover, sticking with PAM and
+performing such a change will result in less reliability on the legitimate side
+for a given SNR. \\
+This suggests it would be better to choose a different modulation technique
+with better reliability for greater constellation size. Also, the encoding
+scheme should be changed and designed appropriately around the characteristics
+of the channel. Simply taking the technique that gave us perfect results in the
+UEC and adapting it to AWGN doesn't seem to give enough room for achieving the
+same results by just tuning channel parameters.
+
+\section{References}
+\begin{enumerate}
+  \item \emph{N. Benvenuto, R. Corvaja, T. Erseghe, and N. Laurenti}, Communication
+  Systems: Fundamentals and Design Methods. John Wiley \& Sons, 2006.
+\end{enumerate}
 \end{document}
