@@ -195,6 +195,18 @@ pairs (since keypairs aren't changed often) that can be used for an offline
 attack against C's private key.
 
 \subsubsection*{Attack implementation and analysis}
+The actual implementation and success probability of such an attack isn't
+related to the nature of the protocol, but rather depends on the specific
+asymmetric cryptohgraphy scheme used in protocol implementation. Since it's
+assuming (per assignment suggestion) that protocol vulnerability doesn't 
+depend on poor implementation of cryptographic primitives, a complete
+implementation of such an attack is not provided. Though, it's interesting to
+note that this attack is much more practical than one might think. Without
+straying from proposed implementation where RSA is used, for example, it's
+proved in [1] that a successful attack can be carried out even by knowing just
+a partial plaintext (although in that paper there's no mention about practical
+implementations of such an attack and supposed complexity with respect to key
+length).
 
 \subsubsection*{Possible improvements}
 A solution of this issue, which also brings half of another desirable feature,
@@ -207,6 +219,15 @@ is to:
 \end{itemize}
 The advantage of this approach is that it allows A to authenticate B, since
 only B is supposed to be able to decrypt $\hat{x_2}$.
+
+This solution is implemented in classes \texttt{AntispoofingNoKPAA},
+\texttt{AntispoofingNoKPAB} and
+\texttt{AntispoofingNoKPAC}. The correctness of the implementation can be seen by launching
+from the prompt:
+
+\begin{lstlisting}[language=bash]
+bin/antispoofing_nokpa_agreement
+\end{lstlisting}
 
 \section{Furhter improvements}
 We've stated that, in the attempt to avoid the possibility of a KPA, we've
@@ -243,4 +264,13 @@ to his advantage. \\
 The same question applies when the failure happens at B, which also arise the
 problem of how to let A know of the failure, again without giving a possible
 attacker any specific information that could be used to his advantage.
+
+\section{References}
+\begin{enumerate}
+  \item \emph{Sahadeo Padhye}, Partial Known Plaintext Attack on Koyama Scheme.
+  School of Studies in Mathematics, Pt.Ravishankar Shukla University, Raipur
+  (C.G.), India, 2002
+  (\href{http://www.academia.edu/1438617/Partial_Known_Plaintext_Attack_on_Koyama_Scheme}{online
+  version}).
+\end{enumerate}
 \end{document}
