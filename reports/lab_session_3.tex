@@ -220,15 +220,6 @@ is to:
 The advantage of this approach is that it allows A to authenticate B, since
 only B is supposed to be able to decrypt $\hat{x_2}$.
 
-This solution is implemented in classes \texttt{AntispoofingNoKPAA},
-\texttt{AntispoofingNoKPAB} and
-\texttt{AntispoofingNoKPAC}. The correctness of the implementation can be seen by launching
-from the prompt:
-
-\begin{lstlisting}[language=bash]
-bin/antispoofing_nokpa_agreement
-\end{lstlisting}
-
 \section{Furhter improvements}
 We've stated that, in the attempt to avoid the possibility of a KPA, we've
 introduced authentication of B to A. While not strictly needed, we can think of
